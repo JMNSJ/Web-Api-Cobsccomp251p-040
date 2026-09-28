@@ -1,0 +1,83 @@
+## ---------------------------------------------------------------------------
+## .NET / ASP.NET Core
+## ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Oo]ut/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Dd]ebugPublic/
+[Rr]eleases/
+artifacts/
+*.dll
+*.pdb
+*.exe
+*.cache
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+packages/repositories.config
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+
+## ---------------------------------------------------------------------------
+## Secrets  (NFR: connection strings + JWT key are never committed)
+## ---------------------------------------------------------------------------
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+*.secrets.json
+secrets.json
+.env
+.env.*
+!.env.example
+
+## ---------------------------------------------------------------------------
+## EF Core local artefacts
+## ---------------------------------------------------------------------------
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.mdf
+*.ldf
+
+## ---------------------------------------------------------------------------
+## OS / editor noise
+## ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+node_modules/
+dist/
