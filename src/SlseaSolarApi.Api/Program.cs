@@ -1,6 +1,18 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using SlseaSolarApi.Api.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------------------------------------------------------------------------
+// Infrastructure layer services
+// ---------------------------------------------------------------------------
+// The connection string and JWT signing key come from user-secrets / environment only —
+// never from a committed appsettings file (see the NFRs).
+builder.Services.AddDbContext<SolarDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("SolarDb"),
+        sql => sql.EnableRetryOnFailure()));
 
 // ---------------------------------------------------------------------------
 // Presentation layer services
