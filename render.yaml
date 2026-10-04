@@ -6,7 +6,7 @@
 #   * the API as a Docker web service, wired to that database
 #
 # Usage: Render Dashboard -> New -> Blueprint -> connect this repository.
-# Render reads this file and prompts for the two secret values marked sync:false.
+# Render reads this file and provisions both resources; no secret has to be typed in by hand.
 #
 # Docs: https://render.com/docs/blueprint-spec
 # ---------------------------------------------------------------------------
@@ -15,8 +15,9 @@ databases:
   - name: slsea-solar-db
     databaseName: slsea
     user: slsea
-    # NOTE: Render's free PostgreSQL plan expires 30 days after creation. After that the instance
-    # is suspended and must be replaced or upgraded. Fine for a module demo; not for production.
+    # NOTE: Render's free PostgreSQL plan is fixed at 1 GB and expires 30 days after creation,
+    # after which there is a 14-day grace period before the data is deleted. The seed (~141k
+    # readings) fits comfortably in 1 GB. Fine for a module demo; not for production.
     plan: free
     region: singapore
     postgresMajorVersion: "16"
@@ -26,7 +27,9 @@ services:
     name: slsea-solar-api
     runtime: docker
     dockerfilePath: ./Dockerfile
-    # Free instances spin down after 15 minutes idle and cold-start on the next request.
+    # Free instances spin down after 15 minutes idle and cold-start on the next request
+    # (~1 minute). Spun-down services do not consume instance hours, of which there are
+    # 750 per workspace per calendar month.
     plan: free
     region: singapore
     healthCheckPath: /health
