@@ -85,6 +85,15 @@ public static class DatabaseProviderSelector
         if (!connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
             !connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
         {
+            if (HasDataSourceKeyword(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "The Postgres provider received a connection string containing 'Data Source', " +
+                    "which is typically a SQLite or SQL Server connection string. Configure " +
+                    "ConnectionStrings__SolarDb with the PostgreSQL URL or a PostgreSQL " +
+                    "key/value connection string (Host, Port, Database, Username, Password).");
+            }
+
             return connectionString;
         }
 
@@ -104,6 +113,19 @@ public static class DatabaseProviderSelector
 
         return builder.ConnectionString;
     }
+
+    private static bool HasDataSourceKeyword(string connectionString) =>
+        connectionString
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(part =>
+            {
+                var separator = part.IndexOf('=');
+                return separator >= 0 &&
+                    string.Equals(
+                        part[..separator].Trim(),
+                        "Data Source",
+                        StringComparison.OrdinalIgnoreCase);
+            });
 
     /// <summary>
     /// Turns a relative SQLite file path into an absolute one rooted at the application's content

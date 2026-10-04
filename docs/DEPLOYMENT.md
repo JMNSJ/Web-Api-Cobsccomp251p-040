@@ -150,6 +150,17 @@ must change both `FROM` lines to `8.0`.
 The `fromDatabase` wiring did not resolve. Confirm the database and service are in the same blueprint
 and that the env var is named exactly `ConnectionStrings__SolarDb` (double underscore).
 
+**Startup fails with `Couldn't set data source`**
+The app is using the Postgres provider with a `Data Source=...` connection string, which is the
+SQLite fallback in `appsettings.json` or a SQL Server-style value—not the Render PostgreSQL
+connection string. In the Render service's **Environment** settings, confirm
+`ConnectionStrings__SolarDb` is sourced from `slsea-solar-db`'s `connectionString` property and
+`Database__Provider` is `Postgres`. If you created the service outside the blueprint, add those
+variables manually using the database's **Internal Database URL** or a PostgreSQL key/value string
+(`Host=...;Port=5432;Database=...;Username=...;Password=...;SSL Mode=Require`). Do not use a
+SQLite filename such as `Data Source=slsea-solar.db`. Keep the credential private when checking the
+setting, then redeploy the service.
+
 **Deploy is live but `/health` returns 503**
 The service cannot reach PostgreSQL. Check the database is `Available` in the dashboard, and confirm
 `Database__Provider` is `Postgres`.
