@@ -1,0 +1,12 @@
+# Build output and local databases must never reach the image.
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+.git/
+.gitignore
+.vs/
+.vscode/
+.idea/
+**/appsettings.Development.json

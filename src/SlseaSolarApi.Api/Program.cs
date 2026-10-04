@@ -1,8 +1,32 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SlseaSolarApi.Api.Infrastructure.Persistence;
+using SlseaSolarApi.Api.Infrastructure.Persistence.Seeding;
+using SlseaSolarApi.Api.Presentation.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------------------------------------------------------------------------
+// Hosting / platform integration
+// ---------------------------------------------------------------------------
+// Containers and PaaS hosts inject the port to listen on via PORT (Heroku/Render/Fly style) or
+// ASPNETCORE_URLS. Honouring both means the same image runs unchanged on any host.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
+// The platform terminates TLS at its own proxy, so forwarded headers must be honoured for
+// redirects and absolute links to come out as https.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // ---------------------------------------------------------------------------
 // Infrastructure layer services
@@ -10,15 +34,21 @@ var builder = WebApplication.CreateBuilder(args);
 // The connection string and JWT signing key come from user-secrets / environment only —
 // never from a committed appsettings file (see the NFRs).
 builder.Services.AddDbContext<SolarDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("SolarDb"),
-        sql => sql.EnableRetryOnFailure()));
+    DatabaseProviderSelector.Configure(options, builder.Configuration));
 
 // ---------------------------------------------------------------------------
 // Presentation layer services
 // ---------------------------------------------------------------------------
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Every failure — handled or not — leaves through the one error schema (decision D10).
+    options.Filters.Add<ApiExceptionFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<DatabaseSeeder>();
+
+// OpenAPI is a first-class deliverable: it must be served from the deployment, so it is enabled in
+// every environment, not only Development (this is what the brief explicitly requires).
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -36,20 +66,94 @@ builder.Services.AddSwaggerGen(options =>
             Url = new Uri("https://github.com/JMNSJ/Web-Api-Cobsccomp251p-040")
         }
     });
+
+    // Surface the XML doc comments (the documentation surface is part of the product).
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    // The bearer-token "Authorize" button, so the write path can be exercised from the UI.
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the raw JWT from POST /api/auth/token. The 'Bearer ' prefix is added automatically."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Open CORS for the module; a real deployment would restrict this to known origins.
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
 var app = builder.Build();
 
 // ---------------------------------------------------------------------------
-// HTTP request pipeline
+// Database bootstrap: apply migrations, then seed if empty.
+// Development convenience only — a production deployment would run migrations as
+// a controlled step rather than on application start.
 // ---------------------------------------------------------------------------
-if (app.Environment.IsDevelopment())
+if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<SolarDbContext>();
+
+    await db.Database.MigrateAsync();
+
+    if (app.Configuration.GetValue("Database:SeedOnStartup", true))
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
+    }
 }
 
-app.UseHttpsRedirection();
+// ---------------------------------------------------------------------------
+// HTTP request pipeline
+// ---------------------------------------------------------------------------
+app.UseForwardedHeaders();
+
+// Swagger is served from the deployment in every environment — it is a graded deliverable.
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "SLSEA National Solar Generation API v1");
+    options.DocumentTitle = "SLSEA National Solar Generation API";
+
+    // Serve the UI at the site root as well, so the bare deployment URL lands on the docs.
+    options.RoutePrefix = string.Empty;
+});
+
+app.UseCors();
+
+// Only redirect to HTTPS when we are not already behind a TLS-terminating proxy.
+if (!app.Configuration.GetValue("Http:SkipHttpsRedirect", false))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 app.MapControllers();
 

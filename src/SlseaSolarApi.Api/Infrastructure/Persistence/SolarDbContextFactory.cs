@@ -9,6 +9,11 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence;
 /// <c>SolarDb</c> connection string from user-secrets / environment / appsettings, so the
 /// migration tooling never hard-codes credentials.
 /// </summary>
+/// <remarks>
+/// The provider can be overridden for a single command with the standard configuration key, e.g.
+/// <c>Database__Provider=Postgres dotnet ef migrations add InitialCreate</c>. The factory honours
+/// that so a Postgres migration set can be generated without editing any file.
+/// </remarks>
 public class SolarDbContextFactory : IDesignTimeDbContextFactory<SolarDbContext>
 {
     public SolarDbContext CreateDbContext(string[] args)
@@ -18,16 +23,13 @@ public class SolarDbContextFactory : IDesignTimeDbContextFactory<SolarDbContext>
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
             .AddUserSecrets<SolarDbContextFactory>(optional: true)
+            // Environment variables last so they win — that is how the provider is overridden.
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = configuration.GetConnectionString("SolarDb")
-            ?? "Server=(localdb)\\MSSQLLocalDB;Database=SlseaSolarDb;Trusted_Connection=True;MultipleActiveResultSets=true";
+        var options = new DbContextOptionsBuilder<SolarDbContext>();
+        DatabaseProviderSelector.Configure(options, configuration);
 
-        var options = new DbContextOptionsBuilder<SolarDbContext>()
-            .UseSqlServer(connectionString)
-            .Options;
-
-        return new SolarDbContext(options);
+        return new SolarDbContext(options.Options);
     }
 }

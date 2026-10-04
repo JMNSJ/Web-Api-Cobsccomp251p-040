@@ -15,10 +15,10 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Provinces",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,11 +29,11 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Districts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    ProvinceId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
+                    ProvinceId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -50,12 +50,12 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "GridSubstations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    CapacityKw = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    DistrictId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
+                    Code = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    CapacityKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    DistrictId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -72,16 +72,16 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Username = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    ProvinceId = table.Column<int>(type: "int", nullable: true),
-                    DistrictId = table.Column<int>(type: "int", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Username = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    FullName = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
+                    PasswordHash = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Role = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    ProvinceId = table.Column<int>(type: "INTEGER", nullable: true),
+                    DistrictId = table.Column<int>(type: "INTEGER", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,16 +104,16 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "SolarInstallations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Reference = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    MeterId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    InverterId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    CapacityKw = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CommissionedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    GridSubstationId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
+                    Reference = table.Column<string>(type: "TEXT", maxLength: 30, nullable: false),
+                    MeterId = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    InverterId = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    CapacityKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CommissionedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    GridSubstationId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -130,15 +130,15 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "GenerationReadings",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    SolarInstallationId = table.Column<int>(type: "int", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    PowerKw = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
-                    EnergyKwh = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
-                    Voltage = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    IngestedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    SequenceNo = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    SolarInstallationId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    PowerKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
+                    EnergyKwh = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
+                    Voltage = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    IngestedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    SequenceNo = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
