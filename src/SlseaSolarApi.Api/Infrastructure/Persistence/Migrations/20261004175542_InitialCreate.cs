@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -15,10 +16,10 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Provinces",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Code = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,11 +30,11 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Districts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Code = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
-                    ProvinceId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    ProvinceId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -50,12 +51,12 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "GridSubstations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
-                    Code = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    CapacityKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    DistrictId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Code = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    CapacityKw = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    DistrictId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -72,16 +73,16 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Username = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    FullName = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
-                    PasswordHash = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Role = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    ProvinceId = table.Column<int>(type: "INTEGER", nullable: true),
-                    DistrictId = table.Column<int>(type: "INTEGER", nullable: true),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    FullName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ProvinceId = table.Column<int>(type: "integer", nullable: true),
+                    DistrictId = table.Column<int>(type: "integer", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -104,16 +105,16 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "SolarInstallations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
-                    Reference = table.Column<string>(type: "TEXT", maxLength: 30, nullable: false),
-                    MeterId = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    InverterId = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
-                    CapacityKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CommissionedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    GridSubstationId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Reference = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    MeterId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    InverterId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    CapacityKw = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CommissionedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    GridSubstationId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -130,15 +131,15 @@ namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
                 name: "GenerationReadings",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    SolarInstallationId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    PowerKw = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
-                    EnergyKwh = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
-                    Voltage = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    IngestedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    SequenceNo = table.Column<long>(type: "INTEGER", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SolarInstallationId = table.Column<int>(type: "integer", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PowerKw = table.Column<decimal>(type: "numeric(18,3)", precision: 18, scale: 3, nullable: false),
+                    EnergyKwh = table.Column<decimal>(type: "numeric(18,3)", precision: 18, scale: 3, nullable: false),
+                    Voltage = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    IngestedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SequenceNo = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {

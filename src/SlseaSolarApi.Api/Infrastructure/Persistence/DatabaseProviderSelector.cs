@@ -25,11 +25,11 @@ public static class DatabaseProviderSelector
     public const string Sqlite = "Sqlite";
     public const string Postgres = "Postgres";
 
-    // Design decision D17: SQLite and PostgreSQL emit different DDL, so each keeps its own
-    // migration set. The context is told which folder to read via MigrationsAssembly.
-    private const string SqliteMigrationsAssembly = "SlseaSolarApi.Api";
-    private const string SqliteMigrationsFolder = "Infrastructure/Persistence/Migrations/Sqlite";
-    private const string PostgresMigrationsFolder = "Infrastructure/Persistence/Migrations/Postgres";
+    // Migrations live in the API assembly. Only one provider's migration set can occupy that
+    // assembly at a time, because EF's model snapshot is a single class. PostgreSQL is the
+    // public-deployment target, so its migrations are the ones kept there. SQLite (local dev)
+    // creates its schema from the same model without a migration set — see EnsureSchemaAsync.
+    private const string MigrationsAssembly = "SlseaSolarApi.Api";
 
     /// <summary>Reads the configured provider name, defaulting to PostgreSQL (the deploy target).</summary>
     public static string Resolve(IConfiguration configuration) =>
@@ -45,7 +45,7 @@ public static class DatabaseProviderSelector
         {
             options.UseSqlite(
                 NormaliseSqliteConnection(connectionString),
-                sqlite => sqlite.MigrationsAssembly(SqliteMigrationsAssembly));
+                sqlite => sqlite.MigrationsAssembly(MigrationsAssembly));
         }
         else if (string.Equals(provider, SqlServer, StringComparison.OrdinalIgnoreCase))
         {
@@ -65,7 +65,7 @@ public static class DatabaseProviderSelector
                 npgsql =>
                 {
                     npgsql.EnableRetryOnFailure();
-                    npgsql.MigrationsAssembly(typeof(DatabaseProviderSelector).Assembly.GetName().Name);
+                    npgsql.MigrationsAssembly(MigrationsAssembly);
                 });
         }
     }

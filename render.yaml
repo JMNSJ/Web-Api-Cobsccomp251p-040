@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Render blueprint — SLSEA National Solar Generation API
+# ---------------------------------------------------------------------------
+# This file lets Render create the whole stack from one repository connection:
+#   * a managed PostgreSQL instance
+#   * the API as a Docker web service, wired to that database
+#
+# Usage: Render Dashboard -> New -> Blueprint -> connect this repository.
+# Render reads this file and prompts for the two secret values marked sync:false.
+#
+# Docs: https://render.com/docs/blueprint-spec
+# ---------------------------------------------------------------------------
+
+databases:
+  - name: slsea-solar-db
+    databaseName: slsea
+    user: slsea
+    # NOTE: Render's free PostgreSQL plan expires 30 days after creation. After that the instance
+    # is suspended and must be replaced or upgraded. Fine for a module demo; not for production.
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: slsea-solar-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Free instances spin down after 15 minutes idle and cold-start on the next request.
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- Database -------------------------------------------------------
+      # fromDatabase injects the managed instance's internal connection string,
+      # so no credential is ever stored in this file or in the repository.
+      - key: ConnectionStrings__SolarDb
+        fromDatabase:
+          name: slsea-solar-db
+          property: connectionString
+
+      # --- Provider -------------------------------------------------------
+      - key: Database__Provider
+        value: Postgres
+
+      # --- Startup behaviour ----------------------------------------------
+      # Apply migrations and seed on boot. The seeder is idempotent: it checks for existing
+      # provinces and exits immediately if the data is already present, so a spin-down/spin-up
+      # cycle never duplicates rows.
+      - key: Database__MigrateOnStartup
+        value: "true"
+      - key: Database__SeedOnStartup
+        value: "true"
+
+      # --- Security -------------------------------------------------------
+      # The JWT signing key is a secret: Render generates it once and keeps it out of git.
+      # Rotating this value invalidates all outstanding tokens.
+      - key: Jwt__SigningKey
+        generateValue: true
+
+      # --- Hosting --------------------------------------------------------
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Render terminates TLS at its proxy and forwards X-Forwarded-Proto, so the app must not
+      # issue its own HTTPS redirect (that would cause a redirect loop).
+      - key: Http__SkipHttpsRedirect
+        value: "true"

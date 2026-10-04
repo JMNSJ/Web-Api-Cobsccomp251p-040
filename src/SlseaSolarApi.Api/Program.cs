@@ -121,7 +121,20 @@ if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<SolarDbContext>();
 
-    await db.Database.MigrateAsync();
+    // PostgreSQL/SQL Server have a migration set, so schema changes are applied incrementally.
+    // SQLite (local development) has no migration set of its own, so the schema is created
+    // directly from the model. Both paths are idempotent.
+    if (string.Equals(
+            DatabaseProviderSelector.Resolve(app.Configuration),
+            DatabaseProviderSelector.Sqlite,
+            StringComparison.OrdinalIgnoreCase))
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
+    else
+    {
+        await db.Database.MigrateAsync();
+    }
 
     if (app.Configuration.GetValue("Database:SeedOnStartup", true))
     {

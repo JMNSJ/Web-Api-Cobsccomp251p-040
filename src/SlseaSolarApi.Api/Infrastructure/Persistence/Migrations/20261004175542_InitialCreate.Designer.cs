@@ -9,11 +9,11 @@ using SlseaSolarApi.Api.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations.Postgres
+namespace SlseaSolarApi.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SolarDbContext))]
-    [Migration("20261004173446_InitialCreatePostgres")]
-    partial class InitialCreatePostgres
+    [Migration("20261004175542_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
