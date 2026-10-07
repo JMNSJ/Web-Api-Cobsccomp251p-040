@@ -27,6 +27,11 @@ public static class PasswordHasher
     /// <summary>Verifies a plaintext password against a stored hash, in constant time.</summary>
     public static bool Verify(string password, string storedHash)
     {
+        if (string.IsNullOrEmpty(storedHash))
+        {
+            return false;
+        }
+
         var parts = storedHash.Split('$');
         if (parts.Length != 4 || parts[0] != "pbkdf2-sha256")
         {

@@ -23,6 +23,8 @@ public class InstallationsController : ApiControllerBase
     /// <param name="districtId">Filter by district.</param>
     /// <param name="substationId">Filter by grid substation.</param>
     /// <param name="isActive">Filter on the active flag.</param>
+    /// <param name="paging">Paging options (<c>page</c>, <c>pageSize</c>).</param>
+    /// <param name="cancellationToken">Request cancellation.</param>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<SolarInstallationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

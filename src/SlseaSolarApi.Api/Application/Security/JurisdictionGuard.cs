@@ -45,7 +45,7 @@ public static class JurisdictionGuard
             }
 
             throw ForbiddenScopeException.ReadingInstallationMismatch(
-                user.InstallationId, installation.Id);
+                user.InstallationId ?? (object)"(none)", installation.Id);
         }
 
         EnsureCanSeeDistrict(user, installation.GridSubstation?.District);
@@ -89,7 +89,7 @@ public static class JurisdictionGuard
         if (installation.Id != user.InstallationId)
         {
             throw ForbiddenScopeException.ReadingInstallationMismatch(
-                user.InstallationId, installation.Id);
+                user.InstallationId ?? (object)"(none)", installation.Id);
         }
     }
 }

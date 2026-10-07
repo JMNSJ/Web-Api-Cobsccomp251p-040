@@ -8,6 +8,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- 1591: missing XML comment for publicly visible type - we document deliberately, not exhaustively -->
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Pin the transitive dependency graph (e.g. Microsoft.Data.SqlClient pulled in by the
+         SqlServer provider) so every Docker build restores identical versions and a redeploy
+         cannot silently change native-library behaviour. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>

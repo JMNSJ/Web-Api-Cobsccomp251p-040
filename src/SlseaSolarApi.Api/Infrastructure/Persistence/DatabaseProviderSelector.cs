@@ -35,6 +35,14 @@ public static class DatabaseProviderSelector
     public static string Resolve(IConfiguration configuration) =>
         configuration["Database:Provider"] ?? Postgres;
 
+    /// <summary>
+    /// True when the context is using the SQLite provider (local development). Used only where a
+    /// query shape SQLite cannot translate (e.g. ORDER BY on DateTimeOffset) needs a provider-aware
+    /// equivalent; PostgreSQL — the deployment target — always takes the canonical path.
+    /// </summary>
+    public static bool IsSqlite(DbContext context) =>
+        context.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
+
     /// <summary>Applies the configured provider to the context options builder.</summary>
     public static void Configure(DbContextOptionsBuilder options, IConfiguration configuration)
     {

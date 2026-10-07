@@ -16,6 +16,16 @@ RUN dotnet publish "SlseaSolarApi.Api.csproj" -c Release -o /app/publish /p:UseA
 # Runtime stage
 # ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+# .NET 8+ official images no longer ship the Kerberos/GSSAPI libraries
+# (https://learn.microsoft.com/dotnet/core/compatibility/containers/8.0/krb5-libs-package).
+# Negotiate/GSSAPI resolution on Linux dlopens libgssapi_krb5.so.2; without this package the
+# process dies at startup with a DllNotFoundException followed by SIGSEGV (exit 139).
+# This is the only native library the runtime needs beyond the base image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=build /app/publish .
 

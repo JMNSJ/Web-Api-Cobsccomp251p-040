@@ -25,10 +25,11 @@ public class ReadingsController : ApiControllerBase
     /// Lists one installation's readings with pagination, timestamp filtering and sorting.
     /// Query runs fully in the database (no in-memory paging).
     /// </summary>
+    /// <param name="installationId">The installation whose readings to list.</param>
     /// <param name="from">Only readings at or after this timestamp.</param>
     /// <param name="to">Only readings at or before this timestamp.</param>
-    /// <param name="sort">Field to sort by: <c>timestamp</c> (default).</param>
-    /// <param name="order"><c>asc</c> or <c>desc</c> (default).</param>
+    /// <param name="paging">Paging and ordering options (<c>page</c>, <c>pageSize</c>, <c>order</c> = asc|desc by timestamp).</param>
+    /// <param name="cancellationToken">Request cancellation.</param>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<GenerationReadingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -59,21 +60,67 @@ public class ReadingsController : ApiControllerBase
             .AsNoTracking()
             .Where(r => r.SolarInstallationId == installationId);
 
-        if (from is DateTimeOffset f)
+        // SQLite (local dev only) cannot translate DateTimeOffset comparisons or ordering, so the
+        // dev path converts the timestamp window into a surrogate-Id window (Id is monotonic with
+        // timestamp per installation). The lookup reads only this installation's ~672 boundary rows
+        // and exists for development convenience; PostgreSQL — the deployment target — filters and
+        // sorts on Timestamp directly, served by the unique (installationId, timestamp) index.
+        if (DatabaseProviderSelector.IsSqlite(_db))
         {
-            query = query.Where(r => r.Timestamp >= f);
-        }
+            var idsAndTimestamps = await _db.GenerationReadings
+                .AsNoTracking()
+                .Where(r => r.SolarInstallationId == installationId)
+                .Select(r => new { r.Id, r.Timestamp })
+                .ToListAsync(cancellationToken);
 
-        if (to is DateTimeOffset t)
+            if (from is DateTimeOffset f)
+            {
+                var fromId = idsAndTimestamps
+                    .Where(r => r.Timestamp >= f)
+                    .OrderBy(r => r.Timestamp)
+                    .Select(r => (long?)r.Id)
+                    .FirstOrDefault();
+
+                query = fromId is long fid
+                    ? query.Where(r => r.Id >= fid)
+                    : query.Where(r => false);
+            }
+
+            if (to is DateTimeOffset t)
+            {
+                var toId = idsAndTimestamps
+                    .Where(r => r.Timestamp <= t)
+                    .OrderByDescending(r => r.Timestamp)
+                    .Select(r => (long?)r.Id)
+                    .FirstOrDefault();
+
+                query = toId is long tid
+                    ? query.Where(r => r.Id <= tid)
+                    : query.Where(r => false);
+            }
+        }
+        else
         {
-            query = query.Where(r => r.Timestamp <= t);
+            if (from is DateTimeOffset f)
+            {
+                query = query.Where(r => r.Timestamp >= f);
+            }
+
+            if (to is DateTimeOffset t)
+            {
+                query = query.Where(r => r.Timestamp <= t);
+            }
         }
 
         // Sort: timestamp asc or desc (default desc, newest first). All filtering/sorting/paging
         // is translated to SQL against the (installationId, timestamp) index.
+        // SQLite (local dev only) cannot ORDER BY DateTimeOffset; surrogate Id increases with
+        // timestamp per installation, so it orders equivalently there. Postgres — the deployment
+        // target — orders by timestamp directly.
+        var isSqlite = DatabaseProviderSelector.IsSqlite(_db);
         query = paging.IsAscending
-            ? query.OrderBy(r => r.Timestamp)
-            : query.OrderByDescending(r => r.Timestamp);
+            ? (isSqlite ? query.OrderBy(r => r.Id) : query.OrderBy(r => r.Timestamp))
+            : (isSqlite ? query.OrderByDescending(r => r.Id) : query.OrderByDescending(r => r.Timestamp));
 
         var page = await query
             .Select(r => new GenerationReadingDto
@@ -99,6 +146,9 @@ public class ReadingsController : ApiControllerBase
     /// nameplate capacity; energy and voltage non-negative; voltage within 0-1000 V.
     /// A retransmitted timestamp already held for this installation yields 409 Conflict.
     /// </remarks>
+    /// <param name="installationId">The installation to ingest the reading for (from the route).</param>
+    /// <param name="request">The reading body.</param>
+    /// <param name="cancellationToken">Request cancellation.</param>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiError), StatusCodes.Status400BadRequest)]
@@ -236,10 +286,14 @@ public class ReadingsController : ApiControllerBase
 
         JurisdictionGuard.EnsureCanSeeInstallation(user, installation);
 
+        // Provider-aware ordering: SQLite (local dev) cannot ORDER BY DateTimeOffset, so it uses
+        // the surrogate Id (increases with timestamp per installation); Postgres — the deployment
+        // target — orders by Timestamp.
+        var isSqlite = DatabaseProviderSelector.IsSqlite(_db);
+
         var latest = await _db.GenerationReadings
             .AsNoTracking()
             .Where(r => r.SolarInstallationId == installationId)
-            .OrderByDescending(r => r.Timestamp)
             .Select(r => new GenerationReadingDto
             {
                 Id = r.Id,
@@ -249,6 +303,7 @@ public class ReadingsController : ApiControllerBase
                 EnergyKwh = r.EnergyKwh,
                 Voltage = r.Voltage
             })
+            .OrderByDescending(dto => isSqlite ? (object)dto.Id : (object)dto.Timestamp)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (latest is null)
