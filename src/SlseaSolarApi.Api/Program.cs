@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using SlseaSolarApi.Api.Application.Common;
+using SlseaSolarApi.Api.Application.Security;
 using SlseaSolarApi.Api.Infrastructure.Persistence;
 using SlseaSolarApi.Api.Infrastructure.Persistence.Seeding;
 using SlseaSolarApi.Api.Presentation.Filters;
@@ -36,6 +38,64 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>
 builder.Services.AddDbContext<SolarDbContext>(options =>
     DatabaseProviderSelector.Configure(options, builder.Configuration));
 
+// --- Authentication: JWT bearer tokens issued by POST /api/auth/token -------------
+// The signing key comes from configuration (environment/user-secrets) — never from a committed file.
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SlseaSolarApi";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SlseaSolarApiClients";
+
+builder.Services
+    .AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = !string.IsNullOrEmpty(jwtSigningKey)
+                ? new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                    System.Text.Encoding.UTF8.GetBytes(jwtSigningKey))
+                : null,
+            ValidateLifetime = true,
+            // The "role" claim doubles as the role claim, so authorization policies can target it.
+            RoleClaimType = "role",
+            NameClaimType = "sub"
+        };
+
+        // Failed authentication must return 401 with the standard JSON error body, not an empty
+        // response or a redirect.
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new ApiError
+                {
+                    Code = "UNAUTHENTICATED",
+                    Message = "Authentication is required. Obtain a token from POST /api/auth/token.",
+                    Detail = context.Error is { Length: > 0 } err ? "The token was missing or invalid." : null,
+                    TraceId = context.HttpContext.TraceIdentifier
+                });
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new ApiError
+                {
+                    Code = "FORBIDDEN",
+                    Message = "You are authenticated but not authorized for this resource.",
+                    TraceId = context.HttpContext.TraceIdentifier
+                });
+            }
+        };
+    });
+
 // ---------------------------------------------------------------------------
 // Presentation layer services
 // ---------------------------------------------------------------------------
@@ -43,9 +103,34 @@ builder.Services.AddControllers(options =>
 {
     // Every failure — handled or not — leaves through the one error schema (decision D10).
     options.Filters.Add<ApiExceptionFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    // Replace the framework's ProblemDetails-style automatic 400 with the project's ApiError body,
+    // so every 4xx has exactly one shape.
+    options.SuppressMapClientErrors = true;
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value!.Errors
+                    .Select(error => error.ErrorMessage)
+                    .ToArray());
+
+        return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new ApiError
+        {
+            Code = "MALFORMED_REQUEST",
+            Message = "The request could not be parsed or failed input validation.",
+            Errors = errors,
+            TraceId = context.HttpContext.TraceIdentifier
+        });
+    };
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<JwtTokenService>();
 
 // OpenAPI is a first-class deliverable: it must be served from the deployment, so it is enabled in
 // every environment, not only Development (this is what the brief explicitly requires).
@@ -160,6 +245,8 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors();
+
+app.UseAuthentication();
 
 // Only redirect to HTTPS when we are not already behind a TLS-terminating proxy.
 if (!app.Configuration.GetValue("Http:SkipHttpsRedirect", false))

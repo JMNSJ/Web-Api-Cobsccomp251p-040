@@ -16,6 +16,7 @@ public class SolarInstallationConfiguration : IEntityTypeConfiguration<SolarInst
         builder.Property(i => i.Reference).IsRequired().HasMaxLength(30);
         builder.Property(i => i.MeterId).IsRequired().HasMaxLength(50);
         builder.Property(i => i.InverterId).HasMaxLength(50);
+        builder.Property(i => i.DeviceSecretHash).IsRequired().HasMaxLength(200);
         builder.Property(i => i.CapacityKw).HasPrecision(18, 2);
 
         builder.HasIndex(i => i.Reference).IsUnique();

@@ -62,6 +62,11 @@ services:
       - key: Jwt__SigningKey
         generateValue: true
 
+      # The demo device secret, used to authenticate write clients against every seeded
+      # installation. Render generates it once; the database stores only its PBKDF2 hash.
+      - key: Solar__DeviceSecret
+        generateValue: true
+
       # --- Hosting --------------------------------------------------------
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
